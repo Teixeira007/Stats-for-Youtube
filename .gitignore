@@ -1,5 +1,5 @@
-node_modules/
 .json
+node_modules/
 credenciais/
 package.json
 package-lock.json
