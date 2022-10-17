@@ -1,6 +1,9 @@
 const express = require('express')
 const google = require('googleapis').google
+const youtube = google.youtube({ version: 'v3' })
 const OAuth2 = google.auth.OAuth2
+const fs = require('fs')
+const { request } = require('http')
 // const state = require('./state.js')
 
 
@@ -8,6 +11,7 @@ async function robot(){
     // const content = state.load()
 
     await authenticateWithOAuth()
+    const listHistory = await getViewingHistory()
 
 
     async function authenticateWithOAuth(){
@@ -99,10 +103,72 @@ async function robot(){
                 })
             })
         }
-
-
-
     }
+
+    async function getViewingHistory(){
+        var playlistId, nextPageToken, prevPageToken;
+
+        function handleAPILoaded(){
+            requestWatchHistoryPlaylistId()
+        }
+
+        function requestWatchHistoryPlaylistId(){
+            var request = gapi.client.youtube.channels.list({
+                mine: true, 
+                part: 'contentDetails'
+            })
+    
+            request.execute(function(response){
+                let playlistId = response.result.items[0].contentDetails.relatedPlaylists.watchHistory;
+                retrieveListHistory(playlistId)
+            })
+        }
+
+        function retrieveListHistory(playlistId, pageToken){
+            $('#video-container').html('');
+            var requestOptions = {
+                playlistId: playlistId,
+                part: 'snippet',
+                maxResults: 10
+            };
+            if (pageToken) {
+                requestOptions.pageToken = pageToken;
+            }
+            var request = gapi.client.youtube.playlistItems.list(requestOptions);
+            request.execute(function(response) {
+                nextPageToken = response.result.nextPageToken;
+                var nextVis = nextPageToken ? 'visible' : 'hidden';
+                $('#next-button').css('visibility', nextVis);
+                prevPageToken = response.result.prevPageToken
+                var prevVis = prevPageToken ? 'visible' : 'hidden';
+                $('#prev-button').css('visibility', prevVis);
+            
+                var playlistItems = response.result.items;
+                if (playlistItems) {
+                  $.each(playlistItems, function(index, item) {
+                    displayResult(item.snippet);
+                  });
+                } else {
+                  $('#video-container').html('Sorry you have no uploaded videos');
+                }
+              });
+            }
+            function displayResult(videoSnippet) {
+                var title = videoSnippet.title;
+                var videoId = videoSnippet.resourceId.videoId;
+                $('#video-container').append('<p>' + title + ' - ' + videoId + '</p>');
+            }
+              
+              // Retrieve the next page of videos in the playlist.
+              function nextPage() {
+                requestVideoPlaylist(playlistId, nextPageToken);
+              }
+              
+              // Retrieve the previous page of videos in the playlist.
+              function previousPage() {
+                requestVideoPlaylist(playlistId, prevPageToken);
+              }
+        }     
 }
 
 module.exports = robot
