@@ -1,6 +1,7 @@
 .json
+histórico-de-visualização.json
+package-lock.json
+package.json
 node_modules/
 credenciais/
-package.json
-package-lock.json
 .gitignore
