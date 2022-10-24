@@ -11,7 +11,7 @@ async function robot(){
     // const content = state.load()
 
     // await authenticateWithOAuth()
-    // const listHistory = await getViewingHistory()
+    const listHistory = await getViewingHistory()
 
     // INICIO DA AUTENTICAÇÃO OAUTH2
 
@@ -107,15 +107,21 @@ async function robot(){
     // }
 
     //FIM DA AUTENTICAÇÃO OAUTH2
-    // const history = require('./histórico-de-visualização.json')
-    async function getViewingHistory(){
+    
+    function getViewingHistory(){
 
         //pega o arquivo json
-        const history = require('./histórico-de-visualização.json')
-        
+        const history = require('./histórico-de-visualização-luis.json')
+        // console.log(history);
         //pega os subtitulos do canal - titulo e url
         const names = history.youtube.map( x => x.subtitles)
 
+        const time = history.youtube.map(x => x.time)
+        const SplitTime = time.map(x => x.split("-"))
+        const firstOfPartTime = SplitTime.map(x => x[0])
+        
+        // console.log(firstOfPartTime)
+        
         //filtra os arquivos undefined
         const namesNoUndefined = names.filter(x => x != undefined)
         
@@ -128,19 +134,21 @@ async function robot(){
         list.sort()
         
         //função para criar um objeto com o titulo do canal e o númeron de ocorrencia
-        function channelYoutube(name, ocorrency){
+        function channelYoutube(name, ocorrency, time){
             this.name = name,
             this.ocorrency = ocorrency
+            this.time = time
         }
 
         // Conta quantas vezes o titulo do canal apareceu
         var current = null;
+        var listObjetc = []
         var cnt = 0;
         for (var i = 0; i < list.length; i++) {
             if (list[i] != current) {
                 if (cnt > 0) {
-                    var newChannel = new channelYoutube(list[i-1], cnt)
-                    console.log(newChannel)
+                    var newChannel = new channelYoutube(list[i-1], cnt, firstOfPartTime[i])
+                    listObjetc.push(newChannel)
                 }
                 current = list[i];
                 cnt = 1;
@@ -149,31 +157,57 @@ async function robot(){
             }
         }
 
-        // function execute() {
-        //     return youtube.channels.list({
-        //         mine: true, 
-        //         part: 'contentDetails'
-        //     })
-        //         .then(function(response) {
-        //                 // Handle the results here (response.result has the parsed body).
-                        
-        //                 let id = response.data.items[0].contentDetails.relatedPlaylists.watchHistory;
-        //                 var requestOptions = {
-        //                             playlistId: id,
-        //                             part: 'snippet',
-        //                             maxResults: 10
-        //                         };
-                               
-        //                         // var request = youtube.playlistItems.list(requestOptions);
-        //                         console.log(id)
-        //               },
-        //               function(err) { console.error("Execute error", err); });
-        // }
-        // execute()
-        
+        return listObjetc; 
+    }
+
+    let listObjectOcorrency = getViewingHistory()
+    // console.log(listObjectOcorrency)
+
+    // Filtrar canais com mais de 100 ocorrencias
+    function overOcorrency100(listObjetc){
+        return listObjetc.filter(function(obj){
+            return obj.ocorrency > 100
+        })
+    }
+
+    //Ordena pelo canal com mais ocorrencias
+    function orderOcorrency(listObject){
+        listObject.sort(function(a,b){
+            if(a.ocorrency > b.ocorrency) return -1;
+            if(a.ocorrency < b.ocorrency) return 1;
+            if(a.ocorrency == b.ocorrency) return 0;
+        })
+
+        return listObject
+    }
+
+    //Pega o TopX de canais com maior ocorrencia
+    function topXOcorrency(listObject, x){
+        var topX = [];
+        orderOcorrency(listObject)
+        for(var i=0; i<x; i++){
+            topX.push(listObject[i])
+        }
+
+        return topX;
+    }
+
+
+    function getViewingHistoryForTime(listObject, timeS){
+        return listObject.filter(function(obj){
+            return obj.time == timeS
+        })
+    }
+
+    // console.log(getViewingHistoryForTime(listObjectOcorrency, 2017))
+
+    // const history = './histórico-de-visualização.json' 
+    // getViewingHistoryForTime(history, 2018)
+
+    // console.log(overOcorrency100(listObjectOcorrency))
+    console.log(topXOcorrency(listObjectOcorrency, 30))
     
-    }    
-    getViewingHistory()
+    
 }
 
 module.exports = robot
