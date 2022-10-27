@@ -108,6 +108,7 @@ async function robot(){
 
     //FIM DA AUTENTICAÇÃO OAUTH2
 
+    //Cria uma lista com os nomes de todos os canais dos videos assistidos
     function generateHistoryList(historyJson){
         const history = require(historyJson)
         const names = history.youtube.map( x => x.subtitles)
@@ -121,6 +122,7 @@ async function robot(){
         return list;
     }   
     
+    // Lista todas as ocorrencias daquele canal desde a criação da conta
     function getViewingHistoryAllTime(historyJson){
         const list = generateHistoryList(historyJson)
         list.sort()
@@ -152,13 +154,13 @@ async function robot(){
     }
 
     
-
-
+    //Cria uma lista com nome e ano ordenada pelo nome
     function getViewingHistoryForTime(historyJson){
         const history = require(historyJson)
 
         let list = generateHistoryList(historyJson)
         let listNoOrder = []
+
 
         const time = history.youtube.map(x => x.time)
         const SplitTime = time.map(x => x.split("-"))
@@ -184,17 +186,15 @@ async function robot(){
         return listNoOrder; 
     }
 
+    //Cria objeto channelYoutubeOrder - (nome, ano)
     function channelYoutubeNoOrder(name, time){
         this.name = name
         this.time = time
     }
 
-    const historyJson1 = './histórico-de-visualização.json'
-    // console.log(getViewingHistoryAllTime(historyJson1));
-    // console.log(getViewingHistoryForTime(historyJson1));
-    // getViewingHistoryForTime(historyJson1)
+    const historyJson1 = './historico-de-visualizacao-paulo.json'
 
-
+    //Conta o número de ocorrencias que cada canal teve em determinado ano
     function getOccurrenceGivenTime(listNoOrder){
         var current = null;
         var listObjetc = []
@@ -218,6 +218,7 @@ async function robot(){
         return listObjetc; 
     } 
     
+    //Cria objeto channelYoutube - (nome, número de ocorrencias, ano)
     function channelYoutube(name, ocorrency, time){
         this.name = name,
         this.ocorrency = ocorrency
@@ -254,18 +255,51 @@ async function robot(){
 
         return topX;
     }
+
+    //Lista os canais assistidos em determinado ano
+    function selectTimeViewingHistory(listObject, timeS){
+        return listObject.filter(function(obj){
+            return obj.time == timeS
+        })
+    }
    
 
-    const historyJson = './histórico-de-visualização.json'
-    // let listObjectOcorrency = getViewingHistoryAllTime(historyJson)
-    // console.log(listObjectOcorrency)
+    const historyJson = './historico-de-visualizacao-gabriel.json'
 
+    
     let listObjectOcorrencyTime = getViewingHistoryForTime(historyJson)
+
+    //Lista as ocorrencias dos canais em determinados anos
     let listGiveOcorrencyTime = getOccurrenceGivenTime(listObjectOcorrencyTime)
-    // console.log(getOccurrenceGivenTime(listObjectOcorrencyTime))
-    // console.log(listObjectOcorrencyTime);
-    // getViewingHistoryForTime(historyJson)
-    console.log(topXOcorrency(listGiveOcorrencyTime, 10))  
+    let listChannelForTime = selectTimeViewingHistory(listGiveOcorrencyTime, 2023)
+   
+
+    // console.log(listGiveOcorrencyTime);
+    console.log(topXOcorrency(listGiveOcorrencyTime, 5)) 
+
+    // function teste(historyJson){
+    //     const history = require(historyJson)
+
+    //     let list = generateHistoryList(historyJson)
+
+    //     const time = history.youtube.map(x => x.time)
+    //     const SplitTime = time.map(x => x.split("-"))
+    //     const firstOfPartTime = SplitTime.map(x => x[0])
+        
+    //     let cont = 0;
+    //     for(var i=0; i<firstOfPartTime.length; i++){
+    //         if(firstOfPartTime[i] == 2016){
+    //             cont++
+    //         }
+    //     }
+    //     // console.log(firstOfPartTime.length, list.length);
+    //     // console.log(list);
+
+
+
+    // }
+
+    // teste(historyJson1)
 }
 
 module.exports = robot
