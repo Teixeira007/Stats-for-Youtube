@@ -108,6 +108,8 @@ async function robot(){
 
     //FIM DA AUTENTICAÇÃO OAUTH2
 
+    const historyJson = './histórico-de-visualização.json'
+
     //Cria uma lista com os nomes de todos os canais dos videos assistidos
     function generateHistoryList(historyJson){
         const history = require(historyJson)
@@ -153,6 +155,15 @@ async function robot(){
         this.ocorrency = ocorrency
     }
 
+    //Pegar todos as datas dos videos
+    function getHistoryFormatTime(historyJson){
+        const history = require(historyJson)
+
+        const times = history.youtube.filter(x => x.subtitles != undefined)
+        const time = times.map(x => x.time)
+
+        return time
+    }
     
     //Cria uma lista com nome e ano ordenada pelo nome
     function getViewingHistoryForTime(historyJson){
@@ -161,9 +172,9 @@ async function robot(){
         let list = generateHistoryList(historyJson)
         let listNoOrder = []
 
-
-        const time = history.youtube.map(x => x.time)
+        const time = getHistoryFormatTime(historyJson)
         const SplitTime = time.map(x => x.split("-"))
+        
         const firstOfPartTime = SplitTime.map(x => x[0])
 
         for(var i=0; i< list.length; i++){
@@ -172,19 +183,82 @@ async function robot(){
         }
     
         orderName(listNoOrder)
-    
-        function orderName(listObject){
-            listObject.sort(function(a,b){
-                if(a.name > b.name) return -1;
-                if(a.name < b.name) return 1;
-                if(a.name == b.name) return 0;
-            })
-    
-            return listObject
-        }
 
         return listNoOrder; 
     }
+
+    //ordena a lista dos canais pelo nome
+    function orderName(listObject){
+        listObject.sort(function(a,b){
+            if(a.name > b.name) return -1;
+            if(a.name < b.name) return 1;
+            if(a.name == b.name) return 0;
+        })
+
+        return listObject
+    }
+
+    //Cria uma lista com nome e data completa ordenada pelo nome
+    function getViewingHistoryWithDateComplete(historyJson){
+        const history = require(historyJson)
+
+        let list = generateHistoryList(historyJson)
+        let listNoOrder = []
+
+        const time = getHistoryFormatTime(historyJson)
+        const SplitTime = time.map(x => new Date(x))
+        // const SplitTimeString = SplitTime.map(x => x.toLocaleDateString())
+
+        for(var i=0; i< list.length; i++){
+            var newChannerlNoOrder = new channelYoutubeNoOrder(list[i], SplitTime[i])
+            listNoOrder.push(newChannerlNoOrder)
+        }
+
+        orderName(listNoOrder)
+
+        return listNoOrder
+    }
+
+    //retorna uma lista com os videos assistidos no ultimo mês
+    function getViewingHistoryForLastMonth(listNoOrder, quantMonth){
+        let list = []
+
+        const currentData = new Date()
+        
+        for(var i=0; i<listNoOrder.length; i++){
+            const duractionMileseconds = currentData - listNoOrder[i].time
+            const durationMinutes = duractionMileseconds/60000
+            const durationDays = Math.trunc(durationMinutes/1440)
+
+            const days = quantMonth * 30
+            if(durationDays <= days){
+                list.push(listNoOrder[i])
+            }
+        }
+
+        return list
+    }
+
+    function countOcorrencyLastMonth(list){
+        var current = null;
+        var listObjetc = []
+        var cnt = 0;
+        for (var i = 0; i < list.length; i++) {
+            if (list[i].name != current) {
+                if (cnt > 0) {
+                    var newChannel = new channelYoutubeAllTime(list[i-1].name, cnt)
+                    listObjetc.push(newChannel)
+                }
+                current = list[i].name;
+                cnt = 1;
+            } else {
+                cnt++;
+            }
+        }
+
+        return listObjetc
+    }
+
 
     //Cria objeto channelYoutubeOrder - (nome, ano)
     function channelYoutubeNoOrder(name, time){
@@ -192,7 +266,6 @@ async function robot(){
         this.time = time
     }
 
-    const historyJson1 = './historico-de-visualizacao-paulo.json'
 
     //Conta o número de ocorrencias que cada canal teve em determinado ano
     function getOccurrenceGivenTime(listNoOrder){
@@ -264,25 +337,44 @@ async function robot(){
     }
    
 
-    const historyJson = './historico-de-visualizacao-gabriel.json'
 
-    
+    //lista com os nomes e ano
     let listObjectOcorrencyTime = getViewingHistoryForTime(historyJson)
+
+    //lista com os nomes e datas completas
+    let listObjectDateComplete = getViewingHistoryWithDateComplete(historyJson)
 
     //Lista as ocorrencias dos canais em determinados anos
     let listGiveOcorrencyTime = getOccurrenceGivenTime(listObjectOcorrencyTime)
-    let listChannelForTime = selectTimeViewingHistory(listGiveOcorrencyTime, 2023)
+    let listChannelForTime = selectTimeViewingHistory(listGiveOcorrencyTime, 2013)
+
+    //retorna uma lista com os videos assistidos no ultimo mês
+    let listLastMonth = getViewingHistoryForLastMonth(listObjectDateComplete, 3)
+    let listGiveOcorrencyLastMonth = countOcorrencyLastMonth(listLastMonth)
+
+
    
 
     // console.log(listGiveOcorrencyTime);
-    console.log(topXOcorrency(listGiveOcorrencyTime, 5)) 
+    console.log(topXOcorrency(listGiveOcorrencyLastMonth, 5)) 
+
+
+
 
     // function teste(historyJson){
     //     const history = require(historyJson)
 
-    //     let list = generateHistoryList(historyJson)
+    //     const names = history.youtube.map( x => x.subtitles)
+        
+    //     const namesNoUndefined = names.filter(x => x != undefined)
+    //     const channel = namesNoUndefined.map(x => x[0].name)
 
-    //     const time = history.youtube.map(x => x.time)
+    //     let list = []
+    //     channel.map(x => list.push(x))
+
+    //     // const times = history.youtube.filter(x => x.subtitles != undefined)
+    //     const time = times.youtube.map(x => x.time)
+
     //     const SplitTime = time.map(x => x.split("-"))
     //     const firstOfPartTime = SplitTime.map(x => x[0])
         
@@ -294,9 +386,6 @@ async function robot(){
     //     }
     //     // console.log(firstOfPartTime.length, list.length);
     //     // console.log(list);
-
-
-
     // }
 
     // teste(historyJson1)
