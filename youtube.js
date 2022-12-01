@@ -239,6 +239,26 @@ async function robot(){
         return list
     }
 
+     //retorna uma lista com os videos assistidos nos ultimos dias x
+     function getViewingHistoryForLastDayX(listNoOrder, daysX){
+        let list = []
+
+        const currentData = new Date()
+        
+        for(var i=0; i<listNoOrder.length; i++){
+            const duractionMileseconds = currentData - listNoOrder[i].time
+            const durationMinutes = duractionMileseconds/60000
+            const durationDays = Math.trunc(durationMinutes/1440)
+
+            if(durationDays <= daysX){
+                list.push(listNoOrder[i])
+            }
+        }
+
+        return list
+    }
+
+    //Contar as ocorrencias dos canais que aparecem na lista
     function countOcorrencyLastMonth(list){
         var current = null;
         var listObjetc = []
@@ -346,19 +366,22 @@ async function robot(){
 
     //Lista as ocorrencias dos canais em determinados anos
     let listGiveOcorrencyTime = getOccurrenceGivenTime(listObjectOcorrencyTime)
-    let listChannelForTime = selectTimeViewingHistory(listGiveOcorrencyTime, 2013)
+    let listChannelForTime = selectTimeViewingHistory(listGiveOcorrencyTime, 2016)
 
-    //retorna uma lista com os videos assistidos no ultimo mês
-    let listLastMonth = getViewingHistoryForLastMonth(listObjectDateComplete, 3)
+    //retorna uma lista com os videos assistidos nos ultimo mês X, sendo X os ultimos meses
+    let listLastMonth = getViewingHistoryForLastMonth(listObjectDateComplete, 1)
     let listGiveOcorrencyLastMonth = countOcorrencyLastMonth(listLastMonth)
 
+    //retorna uma lista com os videos assistidos nos ultimo dias X, sendo X os ultimos dias
+    let listLastDaysX = getViewingHistoryForLastDayX(listObjectDateComplete, 10)
+    let listGiveOcorrencyLastDayX = countOcorrencyLastMonth(listLastDaysX)
 
-   
+    let historyComplete = getViewingHistoryAllTime(historyJson)
+    
 
-    // console.log(listGiveOcorrencyTime);
-    console.log(topXOcorrency(listGiveOcorrencyLastMonth, 5)) 
-
-
+    // console.log(historyComplete);
+    console.log(topXOcorrency(historyComplete, 10)) 
+    
 
 
     // function teste(historyJson){
